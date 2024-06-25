@@ -1,5 +1,6 @@
 package com.uber_project_auth_service.Services;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -12,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 public class JwtService implements CommandLineRunner {
@@ -22,20 +24,57 @@ public class JwtService implements CommandLineRunner {
     @Value("${jwt.secret}")
     private String SECRET;
 
-    private String createToken(Map<String, Object> payload, String username)
+    private SecretKey getSignInKey()
+    {
+        return  Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String createToken(Map<String, Object> payload, String email)
     {
         Date now= new Date();
         Date expirtyDate= new Date(now.getTime()+ expiry* 1000L);
-        SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-
 
         return Jwts.builder()
                 .claims(payload)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(expirtyDate)
-                .subject(username)
-                .signWith(key)
+                .subject(email)
+                .signWith(getSignInKey())
                 .compact();
+    }
+
+    private Claims extractAllClaims(String token) {
+        return  Jwts
+                .parser()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+    private boolean isTokenExpired(String token){
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Object extractPayloadWithKey(String token, String payloadKey){
+       Claims claims= extractAllClaims(token);
+       return (Object) claims.get(payloadKey);
+    }
+
+    private String extractPhoneNumber(String token){
+        Claims claims = extractAllClaims(token);
+        return (String) claims.get("phoneNumber");
+    }
+    private boolean isTokenValid(String token, String email)
+    {
+        return !isTokenExpired(token) && extractPayloadWithKey(token, email).equals(email);
     }
 
     @Override
@@ -44,8 +83,10 @@ public class JwtService implements CommandLineRunner {
         Map<String, Object> payload= new HashMap<>();
         payload.put("email","venky@gmail.com");
         payload.put("password","venky123");
-
-        String token = createToken(payload,"venkatesh");
+        payload.put("phoneNumber","888888888");
+        String token = createToken(payload,payload.get("email").toString());
         System.out.println(token);
+        System.out.println(extractPhoneNumber(token));
+        System.out.println(extractPayloadWithKey(token,"password"));
     }
 }
