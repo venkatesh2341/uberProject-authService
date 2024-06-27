@@ -4,6 +4,7 @@ import com.uber_project_auth_service.DTOs.AuthRequestDTO;
 import com.uber_project_auth_service.DTOs.PassengerDTO;
 import com.uber_project_auth_service.DTOs.PassengerSignupRequestDTO;
 import com.uber_project_auth_service.Services.AuthService;
+import com.uber_project_auth_service.Services.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,17 +16,23 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
 
-    AuthController(AuthService authService, AuthenticationManager authenticationManager ){
+    AuthController(AuthService authService, AuthenticationManager authenticationManager,
+                    JwtService jwtService){
         this.authService= authService;
         this.authenticationManager= authenticationManager;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/signup/passenger")
@@ -37,12 +44,15 @@ public class AuthController {
     }
 
     @PostMapping("/signin/passenger")
-    public ResponseEntity<String> siginPassenger(@RequestBody AuthRequestDTO  authRequestDTO){
+    public ResponseEntity<?> siginPassenger(@RequestBody AuthRequestDTO  authRequestDTO){
 
 //        System.out.println(authRequestDTO.getEmail() + " " + authRequestDTO.getPassword());
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getEmail(), authRequestDTO.getPassword()));
         if(authentication.isAuthenticated()){
-            return new ResponseEntity<String>("Logged in succesfully", HttpStatus.OK);
+//            Map<String, Object> payload = new HashMap<>();
+//            payload.put("email", authRequestDTO.getEmail());
+//            payload.put("password", authRequestDTO.getPassword());
+            return new ResponseEntity<>( jwtService.createToken(authRequestDTO.getEmail()) , HttpStatus.OK);
         }
         else {
             throw new UsernameNotFoundException("User not found");
