@@ -9,24 +9,24 @@ import java.util.List;
 
 public class AuthPassengerDetails extends Passenger implements UserDetails {
 
-    private String userName;
+    private String username;
 
     private String password;
 
     public AuthPassengerDetails(Passenger passenger) {
-        this.userName = passenger.getEmail();
+        this.username = passenger.getEmail();
         this.password = passenger.getPassword();
     }
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return null;
     }
 
     @Override
     public String getUsername() {
-        return this.userName;
+        return this.username;
     }
 
     @Override
@@ -36,21 +36,21 @@ public class AuthPassengerDetails extends Passenger implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
 }

@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtService implements CommandLineRunner {
+public class JwtService  {
 
     @Value("${jwt.expiry}")
     private int expiry;
@@ -77,16 +77,16 @@ public class JwtService implements CommandLineRunner {
         return !isTokenExpired(token) && extractPayloadWithKey(token, email).equals(email);
     }
 
-    @Override
-    public void run(String... args) throws Exception {
-
-        Map<String, Object> payload= new HashMap<>();
-        payload.put("email","venky@gmail.com");
-        payload.put("password","venky123");
-        payload.put("phoneNumber","888888888");
-        String token = createToken(payload,payload.get("email").toString());
-        System.out.println(token);
-        System.out.println(extractPhoneNumber(token));
-        System.out.println(extractPayloadWithKey(token,"password"));
-    }
+//    @Override
+//    public void run(String... args) throws Exception {
+//
+//        Map<String, Object> payload= new HashMap<>();
+//        payload.put("email","venky@gmail.com");
+//        payload.put("password","venky123");
+//        payload.put("phoneNumber","888888888");
+//        String token = createToken(payload,payload.get("email").toString());
+//        System.out.println(token);
+//        System.out.println(extractPhoneNumber(token));
+//        System.out.println(extractPayloadWithKey(token,"password"));
+//    }
 }
