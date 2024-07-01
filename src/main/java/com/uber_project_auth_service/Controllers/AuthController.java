@@ -1,11 +1,15 @@
 package com.uber_project_auth_service.Controllers;
 
 import com.uber_project_auth_service.DTOs.AuthRequestDTO;
+import com.uber_project_auth_service.DTOs.AuthResponseDTO;
 import com.uber_project_auth_service.DTOs.PassengerDTO;
 import com.uber_project_auth_service.DTOs.PassengerSignupRequestDTO;
 import com.uber_project_auth_service.Services.AuthService;
 import com.uber_project_auth_service.Services.JwtService;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -44,15 +48,23 @@ public class AuthController {
     }
 
     @PostMapping("/signin/passenger")
-    public ResponseEntity<?> siginPassenger(@RequestBody AuthRequestDTO  authRequestDTO){
+    public ResponseEntity<?> siginPassenger(@RequestBody AuthRequestDTO  authRequestDTO, HttpServletResponse response){
 
 //        System.out.println(authRequestDTO.getEmail() + " " + authRequestDTO.getPassword());
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDTO.getEmail(), authRequestDTO.getPassword()));
         if(authentication.isAuthenticated()){
-//            Map<String, Object> payload = new HashMap<>();
-//            payload.put("email", authRequestDTO.getEmail());
-//            payload.put("password", authRequestDTO.getPassword());
-            return new ResponseEntity<>( jwtService.createToken(authRequestDTO.getEmail()) , HttpStatus.OK);
+            String jwtToken = jwtService.createToken(authRequestDTO.getEmail());
+
+            ResponseCookie cookie = ResponseCookie.from("JwtToken", jwtToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(7*24*3600)
+                    .build();
+
+            response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            return new ResponseEntity<>(AuthResponseDTO.builder().success(true).build(), HttpStatus.OK);
+
         }
         else {
             throw new UsernameNotFoundException("User not found");
